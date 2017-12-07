@@ -1,6 +1,7 @@
 ---
 
 - name: Install dependent packages.
+  become: true
   apt:
     name: "{{ item }}"
     state: present

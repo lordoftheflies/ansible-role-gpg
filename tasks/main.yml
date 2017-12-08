@@ -14,3 +14,7 @@
 
 - include: import.yml
   when: gpg_key_import_enable
+
+- include: trust.yml
+  when: gpg_key_trust_enable
+

@@ -1,5 +1,25 @@
 ---
-- hosts: localhost
-  remote_user: root
+- hosts: all
+  become: true
+  gather_facts: false
+
+  pre_tasks:
+
+  - set_fact: ansible_user='ubuntu'
+  - name: "Ensure that our target has python2.x for Ansible gather facts (Sometimes Ubuntu 16.04 does not)"
+    raw: bash -c "test -e /usr/bin/python || (apt -qqy update && apt install -qqy python-minimal)"
+    register: output
+    changed_when:
+    - output.stdout != ""
+    - output.stdout != "\r\n"
+    ignore_errors: yes
+
+
+  - name: "Now that we are sure Python 2.7 is installed we can gather our facts"
+    setup:
+
   roles:
-    - ansible-role-gpg_key
+
+    - epel
+    - haveged
+    - { role: gpg, ansible_user: ubuntu }

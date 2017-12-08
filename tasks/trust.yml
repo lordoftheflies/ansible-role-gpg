@@ -1,0 +1,49 @@
+---
+
+- debug: var=gpg_key_gen_files
+
+## expect method (installs lots of stuff)
+
+- name: "ensure that expect is installed"
+  become: true
+  apt:
+    name: 'expect'
+    state: present
+    update_cache: yes
+    cache_valid_time: 86400
+#  when: ansible_os_family == 'Debian'
+
+- debug: var=gpg_key_user
+
+- name: "copy over gpg.conf file"
+  become: '{{ gpg_key_user }}'
+  copy:
+    src : 'files/gpg.conf'
+    dest: '~/{{ gpg_key_basedir }}/gpg.conf'
+    owner: "{{ gpg_key_user }}"
+    group: "{{ gpg_key_user }}"
+    mode: 0600
+#  when: gpg_keys.stdout == ""
+
+
+- name: "copy over set-trust.exp script"
+  become: '{{ gpg_key_user }}'
+  copy:
+    src : 'files/set-trust-ultimate.exp'
+    dest: '~/{{ gpg_key_basedir }}/set-trust.exp'
+    owner: "{{ gpg_key_user }}"
+    group: "{{ gpg_key_user }}"
+    mode: 0700
+#  when: gpg_keys.stdout == ""
+
+- shell: gpg2 --list-keys | grep pub | grep -o -P '(?<=/)[A-Z0-9]{8}'
+  become: '{{ gpg_key_user }}'
+  register: gpg_key_id
+
+- name: "execute set-trust-exp"
+  become: '{{ gpg_key_user }}'
+  command: './set-trust.exp {{ gpg_key_id.stdout }}'
+  args:
+    chdir: "~/{{ gpg_key_basedir }}"
+#  when: gpg_keys.stdout == ""
+

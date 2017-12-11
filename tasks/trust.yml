@@ -11,7 +11,7 @@
     state: present
     update_cache: yes
     cache_valid_time: 86400
-#  when: ansible_os_family == 'Debian'
+  when: ansible_os_family == 'Debian'
 
 - debug: var=gpg_key_user
 
@@ -23,8 +23,7 @@
     owner: "{{ gpg_key_user }}"
     group: "{{ gpg_key_user }}"
     mode: 0600
-#  when: gpg_keys.stdout == ""
-
+  when: gpg_keys.stdout == ""
 
 - name: "copy over set-trust.exp script"
   become: '{{ gpg_key_user }}'
@@ -34,16 +33,34 @@
     owner: "{{ gpg_key_user }}"
     group: "{{ gpg_key_user }}"
     mode: 0700
-#  when: gpg_keys.stdout == ""
+  when: gpg_keys.stdout == ""
 
 - shell: gpg2 --list-keys | grep pub | grep -o -P '(?<=/)[A-Z0-9]{8}'
   become: '{{ gpg_key_user }}'
   register: gpg_key_id
+
+- debug: var=gpg_key_id.stdout
 
 - name: "execute set-trust-exp"
   become: '{{ gpg_key_user }}'
   command: './set-trust.exp {{ gpg_key_id.stdout }}'
   args:
     chdir: "~/{{ gpg_key_basedir }}"
+  when: gpg_keys.stdout == ""
+
+#- name: "get gpg id"
+#  become: '{{ gpg_key_user }}'
+#  shell: gpg2 --list-keys | grep pub | grep -o -P '(?<=/)[A-Z0-9]{8}'
+#  register: pass_gpg_key_id
+#  when: ansible_os_family == 'Debian'
+
+#- name: "get gpg id"
+#  become: '{{ gpg_key_user }}'
+#  shell: echo "$( \
+#           gpg2 --list-keys --fingerprint \
+#           | grep `gpg2 --list-keys | grep pub | grep -o -P '(?<=/)[A-Z0-9]{8}'` -A 1 | tail -1 \
+#           | tr -d '[:space:]' | awk 'BEGIN { FS = "=" } ; { print $2 }' \
+#         ):6:" | gpg2 --import-ownertrust;
 #  when: gpg_keys.stdout == ""
+
 

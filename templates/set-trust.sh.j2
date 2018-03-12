@@ -1,0 +1,5 @@
+echo "$( \
+  gpg2 --list-keys --fingerprint \
+  | grep {{ gpg_key_id.stdout }} -A 1 | tail -1 \
+  | tr -d '[:space:]' | awk 'BEGIN { FS = "=" } ; { print $2 }' \
+):6:" | gpg --import-ownertrust;

@@ -25,28 +25,54 @@
     mode: 0600
   when: gpg_keys.stdout == ""
 
-- name: "copy over set-trust.exp script"
+- name: "copy over set-trust-ultimate.exp script"
   become: '{{ gpg_key_user }}'
   copy:
     src : 'files/set-trust-ultimate.exp'
-    dest: '~/{{ gpg_key_basedir }}/set-trust.exp'
+    dest: '~/{{ gpg_key_basedir }}/set-trust-ultimate.exp'
     owner: "{{ gpg_key_user }}"
     group: "{{ gpg_key_user }}"
     mode: 0700
   when: gpg_keys.stdout == ""
 
-- shell: gpg2 --list-keys | grep pub | grep -o -P '(?<=/)[A-Z0-9]{8}'
+- name: "shell > gpg2 --list-keys | grep pub | grep -o -P '(?<=/)[A-Z0-9]{8}'"
+  shell: gpg2 --list-keys | grep pub | grep -o -P '(?<=/)[A-Z0-9]{8}'
   become: '{{ gpg_key_user }}'
   register: gpg_key_id
 
 - debug: var=gpg_key_id.stdout
+- debug: var=gpg_key_user
+- debug: var=gpg_key_basedir
+- debug: var=gpg_key_id.stdout
 
-- name: "execute set-trust-exp"
+- name: "template set-trust.sh"
   become: '{{ gpg_key_user }}'
-  command: './set-trust.exp {{ gpg_key_id.stdout }}'
-  args:
-    chdir: "~/{{ gpg_key_basedir }}"
+  template:
+    src  : 'set-trust.sh.j2'
+    dest : '~/{{ gpg_key_basedir }}/set-trust.sh'
+    owner: '{{ gpg_key_user }}'
+    group: '{{ gpg_key_user }}'
+    mode: '0755'
+
+- name: "Execute ~/{{ gpg_key_basedir }}/set-trust.sh"
+  become: '{{ gpg_key_user }}'
+  shell: ~/{{ gpg_key_basedir }}/set-trust.sh
   when: gpg_keys.stdout == ""
+  register: set-trust.sh_output
+
+- debug: var=set-trust.sh_output
+
+#- name: "execute set-trust-exp - ~/{{ gpg_key_basedir }}/set-trust-ultimate.exp {{ gpg_key_id.stdout }}"
+#  become: '{{ gpg_key_user }}'
+#  shell: '~/{{ gpg_key_basedir }}/set-trust-ultimate.exp {{ gpg_key_id.stdout }}'
+#  command: '~/{{ gpg_key_basedir }}/set-trust-ultimate.exp {{ gpg_key_id.stdout }}'
+#  command: './set-trust-ultimate.exp {{ gpg_key_id.stdout }}'
+#  args:
+#    chdir: "~/{{ gpg_key_basedir }}"
+#  when: gpg_keys.stdout == ""
+#  register: set-trust-ultimate_output
+
+#- debug: var=set-trust-ultimate_output
 
 #- name: "get gpg id"
 #  become: '{{ gpg_key_user }}'
